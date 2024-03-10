@@ -1,7 +1,17 @@
 import { NextFunction , Request , Response  } from "express";
 import { auth } from "express-oauth2-jwt-bearer";
-import { jwt } from "jsonwebtoken";
+import  jwt  from "jsonwebtoken";
 import User from "../models/user";
+
+declare global {
+    namespace Express {
+        interface Request {
+            userId: string;
+            auth0Id: string;
+
+        }
+    }
+}
 
 export const jwtCheck = auth({
     audience: process.env.AUTH0_AUDIENCE,
@@ -22,7 +32,7 @@ export const jwtCheck = auth({
 
      const token = authorization.split(" ")[1];
      try{
-         const decoded =  jwt.decode(token) as jwt.jwtPayload;
+         const decoded =  jwt.decode(token) as jwt.JwtPayload;
          const auth0Id = decoded.sub;
 
          const user = await User.findOne({ auth0Id });
@@ -31,8 +41,9 @@ export const jwtCheck = auth({
              return res.sendStatus(401);
          }
 
-         req.auth0Id = auth0Id;
+         req.auth0Id = auth0Id as string;
          req.userId = user._id.toString();
+         next();
 
      } catch(error){
          return res.sendStatus(401);
